@@ -1,2 +1,24 @@
-/.env
-/node_modules
+# Environment variables & secrets (CRITICAL: never commit .env)
+.env
+.env.*
+!.env.example
+*.env
+
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Upload & temp files
+uploads/
+tmp/
+temp/
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

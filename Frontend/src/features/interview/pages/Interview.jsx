@@ -1,46 +1,119 @@
+/**
+ * ===========================================================================================
+ * INTERVIEW.JSX — Interview Report Detail Dashboard
+ * ===========================================================================================
+ * 
+ * 🎨 SKILLS USED IN THIS FILE:
+ * 
+ * 1. [UI-UX Pro Max Skill]:
+ *    - Executive 3-column split dashboard layout (Left Nav, Center Content, Right Sidebar)
+ *    - Semantic question badges: .q-card__tag--intention (indigo) vs .q-card__tag--answer (emerald)
+ *    - Circular Match Score Ring (.match-score-widget__ring) with dynamic status color:
+ *      * score--high (emerald border glow) for >= 80%
+ *      * score--mid (amber border glow) for 60-79%
+ *      * score--low (crimson border glow) for < 60%
+ *    - Categorized skill gap pills (.skill-tag--critical, .skill-tag--medium, .skill-tag--minor)
+ *    - RoadMap day cards with day badges, focus headers, and task lists
+ *    - Download Resume CTA button with sapphire gradient and bevel highlight
+ * 
+ * 2. [Motion AI Skill] (from 'motion/react'):
+ *    - <AnimatePresence> accordion expanding/collapsing question answers smoothly
+ *    - Chevron rotation animation (<motion.span animate={{ rotate: open ? 180 : 0 }}>)
+ *    - Staggered physics springs for question cards (stiffness: 300, damping: 30, delay: 0.05 * index)
+ *    - RoadMapDay staggered entry: initial={{ opacity: 0, x: -20 }}
+ *    - Tab section slide/fade transitions: <AnimatePresence mode="wait">
+ *    - Match score spring scale: initial={{ scale: 0.8 }} animate={{ scale: 1 }} with delayed score counter
+ *    - Skill gap tags staggered entrance: initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+ * 
+ * NOTE: For backend logic (useInterview hook, getReportById, getResumePdf blob download), see hooks/useInterview.js.
+ * ===========================================================================================
+ */
 import React, { useState, useEffect } from 'react'
-import '../style/interview.scss'
+import '../style/interview.scss' // [UI-UX Pro Max Skill]: Styles for the report dashboard
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate, useParams } from 'react-router'
+import { motion, AnimatePresence } from 'motion/react' // [Motion AI Skill]: Physics-based animations
+import { Code, MessageSquare, Navigation, ChevronDown, Sparkles, ArrowLeft } from 'lucide-react' // [UI-UX Pro Max Skill]: Minimalist SVG icons
 
 
-
+// Navigation items for the section tabs (technical, behavioral, roadmap).
 const NAV_ITEMS = [
-    { id: 'technical', label: 'Technical Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>) },
-    { id: 'behavioral', label: 'Behavioral Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>) },
-    { id: 'roadmap', label: 'Road Map', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>) },
+    { id: 'technical', label: 'Technical Questions', icon: <Code size={16} /> },
+    { id: 'behavioral', label: 'Behavioral Questions', icon: <MessageSquare size={16} /> },
+    { id: 'roadmap', label: 'Road Map', icon: <Navigation size={16} /> },
 ]
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+/** 
+ * QuestionCard — Expandable accordion card for a single question.
+ * Styled with UI-UX Pro Max tokens + Motion AI spring physics.
+ */
 const QuestionCard = ({ item, index }) => {
-    const [ open, setOpen ] = useState(false)
+    const [open, setOpen] = useState(false)
     return (
-        <div className='q-card'>
+        // [Motion AI Skill]: Stagger entrance for each card using spring physics
+        <motion.div
+            className='q-card'
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 * index, type: "spring", stiffness: 300, damping: 30 }}
+        >
             <div className='q-card__header' onClick={() => setOpen(o => !o)}>
+                {/* [UI-UX Pro Max Skill]: Monospace question index badge */}
                 <span className='q-card__index'>Q{index + 1}</span>
                 <p className='q-card__question'>{item.question}</p>
-                <span className={`q-card__chevron ${open ? 'q-card__chevron--open' : ''}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-                </span>
+                
+                {/* [Motion AI Skill]: Rotate chevron smoothly by 180 degrees when toggled */}
+                <motion.span
+                    className='q-card__chevron'
+                    animate={{ rotate: open ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <ChevronDown size={16} />
+                </motion.span>
             </div>
-            {open && (
-                <div className='q-card__body'>
-                    <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--intention'>Intention</span>
-                        <p>{item.intention}</p>
-                    </div>
-                    <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
-                        <p>{item.answer}</p>
-                    </div>
-                </div>
-            )}
-        </div>
+
+            {/* [Motion AI Skill]: Animate accordion body open/close with dynamic height */}
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        className='q-card__body'
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                    >
+                        {/* [UI-UX Pro Max Skill]: Intention tag & description */}
+                        <div className='q-card__section'>
+                            <span className='q-card__tag q-card__tag--intention'>Intention</span>
+                            <p>{item.intention}</p>
+                        </div>
+                        {/* [UI-UX Pro Max Skill]: Model Answer tag & response */}
+                        <div className='q-card__section'>
+                            <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
+                            <p>{item.answer}</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     )
 }
 
-const RoadMapDay = ({ day }) => (
-    <div className='roadmap-day'>
+/** 
+ * RoadMapDay — A single day card in the preparation roadmap.
+ * Styled with UI-UX Pro Max tokens + Motion AI spring physics.
+ */
+const RoadMapDay = ({ day, index }) => (
+    // [Motion AI Skill]: Staggered entrance for roadmap cards
+    <motion.div
+        className='roadmap-day'
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.08 * index, type: "spring", stiffness: 300, damping: 30 }}
+    >
+        {/* [UI-UX Pro Max Skill]: Day badge and focus title */}
         <div className='roadmap-day__header'>
             <span className='roadmap-day__badge'>Day {day.day}</span>
             <h3 className='roadmap-day__focus'>{day.focus}</h3>
@@ -53,140 +126,219 @@ const RoadMapDay = ({ day }) => (
                 </li>
             ))}
         </ul>
-    </div>
+    </motion.div>
 )
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const Interview = () => {
-    const [ activeNav, setActiveNav ] = useState('technical')
+    const [activeNav, setActiveNav] = useState('technical')
     const { report, getReportById, loading, getResumePdf } = useInterview()
     const { interviewId } = useParams()
+    const navigate = useNavigate()
 
+    // Fetch report data when component mounts or interviewId changes
     useEffect(() => {
         if (interviewId) {
             getReportById(interviewId)
         }
-    }, [ interviewId ])
+    }, [interviewId])
 
-
-
+    // Loading screen during fetch
     if (loading || !report) {
         return (
             <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
+                <div className='spinner' />
+                <p>Loading your interview preparation kit...</p>
             </main>
         )
     }
 
+    // [UI-UX Pro Max Skill]: Determine color class for match score (high/mid/low)
     const scoreColor =
         report.matchScore >= 80 ? 'score--high' :
             report.matchScore >= 60 ? 'score--mid' : 'score--low'
-
 
     return (
         <div className='interview-page'>
             <div className='interview-layout'>
 
-                {/* ── Left Nav ── */}
-                <nav className='interview-nav'>
+                {/* ── [UI-UX Pro Max Skill]: Left Navigation Panel ── */}
+                <motion.nav
+                    className='interview-nav'
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4 }}
+                >
                     <div className="nav-content">
+                        {/* Back button */}
+                        <button className='back-btn' onClick={() => navigate('/')}>
+                            <ArrowLeft size={14} />
+                            Back to Prepcraft Studio
+                        </button>
+
                         <p className='interview-nav__label'>Sections</p>
                         {NAV_ITEMS.map(item => (
-                            <button
+                            // [Motion AI Skill]: Button with subtle hover slide effect
+                            <motion.button
                                 key={item.id}
                                 className={`interview-nav__item ${activeNav === item.id ? 'interview-nav__item--active' : ''}`}
                                 onClick={() => setActiveNav(item.id)}
+                                whileHover={{ x: 4 }}
+                                whileTap={{ scale: 0.97 }}
                             >
                                 <span className='interview-nav__icon'>{item.icon}</span>
                                 {item.label}
-                            </button>
+                            </motion.button>
                         ))}
                     </div>
-                    <button
+
+                    {/* [UI-UX Pro Max Skill]: Download Tailored Resume button */}
+                    {/* [Motion AI Skill]: Spring hover and click scale */}
+                    <motion.button
                         onClick={() => { getResumePdf(interviewId) }}
-                        className='button primary-button' >
-                        <svg height={"0.8rem"} style={{ marginRight: "0.8rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.6144 17.7956 11.492 15.7854C12.2731 13.9966 13.6789 12.5726 15.4325 11.7942L17.8482 10.7219C18.6162 10.381 18.6162 9.26368 17.8482 8.92277L15.5079 7.88394C13.7092 7.08552 12.2782 5.60881 11.5105 3.75894L10.6215 1.61673C10.2916.821765 9.19319.821767 8.8633 1.61673L7.97427 3.75892C7.20657 5.60881 5.77553 7.08552 3.97685 7.88394L1.63658 8.92277C.868537 9.26368.868536 10.381 1.63658 10.7219L4.0523 11.7942C5.80589 12.5726 7.21171 13.9966 7.99275 15.7854L8.8704 17.7956C9.20776 18.5682 10.277 18.5682 10.6144 17.7956ZM19.4014 22.6899 19.6482 22.1242C20.0882 21.1156 20.8807 20.3125 21.8695 19.8732L22.6299 19.5353C23.0412 19.3526 23.0412 18.7549 22.6299 18.5722L21.9121 18.2532C20.8978 17.8026 20.0911 16.9698 19.6586 15.9269L19.4052 15.3156C19.2285 14.8896 18.6395 14.8896 18.4628 15.3156L18.2094 15.9269C17.777 16.9698 16.9703 17.8026 15.956 18.2532L15.2381 18.5722C14.8269 18.7549 14.8269 19.3526 15.2381 19.5353L15.9985 19.8732C16.9874 20.3125 17.7798 21.1156 18.2198 22.1242L18.4667 22.6899C18.6473 23.104 19.2207 23.104 19.4014 22.6899Z"></path></svg>
-                        Download Resume
-                    </button>
-                </nav>
+                        className='download-resume-btn'
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                    >
+                        <Sparkles size={14} />
+                        Download Tailored Resume
+                    </motion.button>
+                </motion.nav>
 
                 <div className='interview-divider' />
 
-                {/* ── Center Content ── */}
+                {/* ── [UI-UX Pro Max Skill]: Center Content Area ── */}
                 <main className='interview-content'>
-                    {activeNav === 'technical' && (
-                        <section>
-                            <div className='content-header'>
-                                <h2>Technical Questions</h2>
-                                <span className='content-header__count'>{report.technicalQuestions.length} questions</span>
-                            </div>
-                            <div className='q-list'>
-                                {report.technicalQuestions.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
+                    {/* [Motion AI Skill]: Tab transition animations */}
+                    <AnimatePresence mode="wait">
+                        {activeNav === 'technical' && (
+                            <motion.section
+                                key="technical"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.25 }}
+                            >
+                                <div className='content-header'>
+                                    <h2>Technical Questions</h2>
+                                    <span className='content-header__count'>{report.technicalQuestions?.length || 0} questions</span>
+                                </div>
+                                <div className='q-list'>
+                                    {report.technicalQuestions?.map((q, i) => (
+                                        <QuestionCard key={i} item={q} index={i} />
+                                    ))}
+                                </div>
+                            </motion.section>
+                        )}
 
-                    {activeNav === 'behavioral' && (
-                        <section>
-                            <div className='content-header'>
-                                <h2>Behavioral Questions</h2>
-                                <span className='content-header__count'>{report.behavioralQuestions.length} questions</span>
-                            </div>
-                            <div className='q-list'>
-                                {report.behavioralQuestions.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
+                        {activeNav === 'behavioral' && (
+                            <motion.section
+                                key="behavioral"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.25 }}
+                            >
+                                <div className='content-header'>
+                                    <h2>Behavioral Questions</h2>
+                                    <span className='content-header__count'>{report.behavioralQuestions?.length || 0} questions</span>
+                                </div>
+                                <div className='q-list'>
+                                    {report.behavioralQuestions?.map((q, i) => (
+                                        <QuestionCard key={i} item={q} index={i} />
+                                    ))}
+                                </div>
+                            </motion.section>
+                        )}
 
-                    {activeNav === 'roadmap' && (
-                        <section>
-                            <div className='content-header'>
-                                <h2>Preparation Road Map</h2>
-                                <span className='content-header__count'>{report.preparationPlan.length}-day plan</span>
-                            </div>
-                            <div className='roadmap-list'>
-                                {report.preparationPlan.map((day) => (
-                                    <RoadMapDay key={day.day} day={day} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
+                        {activeNav === 'roadmap' && (
+                            <motion.section
+                                key="roadmap"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.25 }}
+                            >
+                                <div className='content-header'>
+                                    <h2>Preparation Road Map</h2>
+                                    <span className='content-header__count'>{report.preparationPlan?.length || 0}-day plan</span>
+                                </div>
+                                <div className='roadmap-list'>
+                                    {report.preparationPlan?.map((day, i) => (
+                                        <RoadMapDay key={day.day || i} day={day} index={i} />
+                                    ))}
+                                </div>
+                            </motion.section>
+                        )}
+                    </AnimatePresence>
                 </main>
 
                 <div className='interview-divider' />
 
-                {/* ── Right Sidebar ── */}
-                <aside className='interview-sidebar'>
-
-                    {/* Match Score */}
-                    <div className='match-score'>
-                        <p className='match-score__label'>Match Score</p>
-                        <div className={`match-score__ring ${scoreColor}`}>
-                            <span className='match-score__value'>{report.matchScore}</span>
-                            <span className='match-score__pct'>%</span>
-                        </div>
-                        <p className='match-score__sub'>Strong match for this role</p>
+                {/* ── [UI-UX Pro Max Skill]: Right Sidebar Widget Panel ── */}
+                <motion.aside
+                    className='interview-sidebar'
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                >
+                    {/* Report Position Title */}
+                    <div className='report-title-widget'>
+                        <p className='report-title-widget__label'>Target Position</p>
+                        <p className='report-title-widget__value'>{report.title}</p>
                     </div>
 
                     <div className='sidebar-divider' />
 
-                    {/* Skill Gaps */}
+                    {/* [UI-UX Pro Max Skill]: Match Score Widget */}
+                    <div className='match-score-widget'>
+                        <p className='match-score-widget__label'>Candidate Match Score</p>
+                        {/* [Motion AI Skill]: Spring scale animation on the circular score ring */}
+                        <motion.div
+                            className={`match-score-widget__ring ${scoreColor}`}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
+                        >
+                            <motion.span
+                                className='match-score-widget__value'
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.5 }}
+                            >
+                                {report.matchScore}
+                            </motion.span>
+                            <span className='match-score-widget__pct'>%</span>
+                        </motion.div>
+                        <p className='match-score-widget__sub'>
+                            {report.matchScore >= 80 ? 'Strong match for this role' :
+                                report.matchScore >= 60 ? 'Good match with some gaps' :
+                                    'Significant preparation needed'}
+                        </p>
+                    </div>
+
+                    <div className='sidebar-divider' />
+
+                    {/* [UI-UX Pro Max Skill]: Skill Gaps tags with severity badges */}
                     <div className='skill-gaps'>
-                        <p className='skill-gaps__label'>Skill Gaps</p>
+                        <p className='skill-gaps__label'>Identified Skill Gaps</p>
                         <div className='skill-gaps__list'>
-                            {report.skillGaps.map((gap, i) => (
-                                <span key={i} className={`skill-tag skill-tag--${gap.severity}`}>
+                            {report.skillGaps?.map((gap, i) => (
+                                // [Motion AI Skill]: Stagger skill gap tag entrance
+                                <motion.span
+                                    key={i}
+                                    className={`skill-tag skill-tag--${gap.severity}`}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.4 + (0.05 * i) }}
+                                >
                                     {gap.skill}
-                                </span>
+                                </motion.span>
                             ))}
                         </div>
                     </div>
 
-                </aside>
+                </motion.aside>
             </div>
         </div>
     )

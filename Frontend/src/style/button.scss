@@ -1,20 +1,62 @@
-.button{
+/* ===========================================================================================
+ * BUTTON.SCSS — Button component styles.
+ * Styled using UI-UX Pro Max skill design tokens.
+ * =========================================================================================== */
 
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
     border: none;
-    outline: none;
-    padding-inline: 1.5rem;
-    padding-block: 0.75rem;
-    border-radius: 1rem;
+    border-radius: var(--radius-md);
     cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
 
-    transition: all 0.3s ease-in-out;
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
 
-    &.primary-button{
-        background-color: #e1034d;
-        color: white;
+.primary-button {
+    background: linear-gradient(135deg, #FF6B4A 0%, #FF2F3A 100%);
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(255, 107, 74, 0.3);
+
+    &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #FFB347 0%, #FF6B4A 100%);
+        box-shadow: 0 4px 16px rgba(255, 107, 74, 0.4);
+        transform: translateY(-1px);
     }
 
-    &:active{
-        transform: scale(0.9);
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+}
+
+.secondary-button {
+    background: var(--color-muted);
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border);
+
+    &:hover:not(:disabled) {
+        background: var(--color-card-hover);
+        border-color: var(--color-muted-foreground);
+    }
+}
+
+.ghost-button {
+    background: transparent;
+    color: var(--color-muted-foreground);
+
+    &:hover:not(:disabled) {
+        background: var(--color-muted);
+        color: var(--color-foreground);
     }
 }
